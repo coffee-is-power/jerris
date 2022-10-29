@@ -243,7 +243,7 @@ fn parse_class() {
             },
         ],
     };
-    match Class::from_file("tests/classes/Main.class") {
+    match Class::from_file("tests/Main.class") {
         Ok(actual_class) => {
             assert_eq!(class, actual_class);
         }
