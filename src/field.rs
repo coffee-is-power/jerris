@@ -1,5 +1,7 @@
 use std::fs::File;
+
 use thiserror::Error;
+
 use crate::access_flags::FieldAccessFlags;
 use crate::attribute::{Attribute, parse_attributes};
 use crate::class::{ParseClassError, read_u16};
@@ -15,11 +17,13 @@ pub struct Field {
     /// TODO: attribute field docs
     pub attributes: Vec<Attribute>,
 }
+
 #[derive(Error, Debug)]
 pub enum FieldParseError {
     #[error("field has invalid access flags")]
     InvalidAccessFlags,
 }
+
 fn parse_field(f: &mut File) -> Result<Field, ParseClassError> {
     let access_flags = FieldAccessFlags::from_bits(read_u16(f)?);
     let access_flags = match access_flags {
@@ -33,9 +37,10 @@ fn parse_field(f: &mut File) -> Result<Field, ParseClassError> {
         name_index,
         descriptor_index,
         access_flags,
-        attributes
+        attributes,
     })
 }
+
 pub(crate) fn parse_fields(f: &mut File) -> Result<Vec<Field>, ParseClassError> {
     let len = read_u16(f)?;
     let mut result = vec![];

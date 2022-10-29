@@ -1,6 +1,8 @@
 use std::fs::File;
+
 use num_traits::FromPrimitive;
 use thiserror::*;
+
 use crate::class;
 use crate::class::ParseClassError;
 
@@ -16,6 +18,7 @@ pub enum MethodReferenceKind {
     NewInvokeSpecial,
     InvokeInterface,
 }
+
 #[derive(Debug, PartialEq)]
 pub enum Constant {
     Class {
@@ -114,12 +117,12 @@ pub enum ConstantPoolValidationError {
     #[error("method type has invalid descriptor index")]
     MethodTypeWithInvalidDescriptorIndex,
     #[error("invalid method handle")]
-    InvalidMethodHandle
+    InvalidMethodHandle,
 }
 
 fn validate_constant(constant: &Constant, pool: &[Constant]) -> Result<(), ConstantPoolValidationError> {
     match constant {
-        Constant::Class {name_index} => {
+        Constant::Class { name_index } => {
             let name_constant = &pool[*name_index as usize];
             if matches!(name_constant, Constant::UTF8String(_)) {
                 validate_constant(name_constant, pool)?;
@@ -128,7 +131,7 @@ fn validate_constant(constant: &Constant, pool: &[Constant]) -> Result<(), Const
                 Err(ConstantPoolValidationError::ClassWithInvalidNameIndex)
             }
         }
-        Constant::Method {class_index, name_and_type_index} => {
+        Constant::Method { class_index, name_and_type_index } => {
             let class_constant = &pool[*class_index as usize];
             if matches!(class_constant, Constant::Class {..}) {
                 validate_constant(class_constant, pool)?;
@@ -143,7 +146,7 @@ fn validate_constant(constant: &Constant, pool: &[Constant]) -> Result<(), Const
                 Err(ConstantPoolValidationError::MethodWithInvalidClassIndex)
             }
         }
-        Constant::Field {class_index, name_and_type_index} => {
+        Constant::Field { class_index, name_and_type_index } => {
             let class_constant = &pool[*class_index as usize];
             if matches!(class_constant, Constant::Class {..}) {
                 validate_constant(class_constant, pool)?;
@@ -158,7 +161,7 @@ fn validate_constant(constant: &Constant, pool: &[Constant]) -> Result<(), Const
                 Err(ConstantPoolValidationError::FieldWithInvalidClassIndex)
             }
         }
-        Constant::InterfaceMethod {class_index, name_and_type_index} => {
+        Constant::InterfaceMethod { class_index, name_and_type_index } => {
             let class_constant = &pool[*class_index as usize];
             if matches!(class_constant, Constant::Class {..}) {
                 validate_constant(class_constant, pool)?;
@@ -176,7 +179,7 @@ fn validate_constant(constant: &Constant, pool: &[Constant]) -> Result<(), Const
         // Just assume they're good, nothing to check here
         Constant::Integer(_) | Constant::Long(_) | Constant::Float(_) | Constant::Double(_) => Ok(()),
         Constant::UTF8String(_) => Ok(()),
-        Constant::String {string_index} => {
+        Constant::String { string_index } => {
             let string_constant = &pool[*string_index as usize];
             if matches!(string_constant, Constant::UTF8String(_)) {
                 validate_constant(string_constant, pool)?;
@@ -185,7 +188,7 @@ fn validate_constant(constant: &Constant, pool: &[Constant]) -> Result<(), Const
                 Err(ConstantPoolValidationError::StringWithInvalidUTF8Index)
             }
         }
-        Constant::NameAndType {name_index, descriptor_index} => {
+        Constant::NameAndType { name_index, descriptor_index } => {
             let name_constant = &pool[*name_index as usize];
             if matches!(name_constant, Constant::UTF8String(_)) {
                 validate_constant(name_constant, pool)?;
@@ -200,7 +203,7 @@ fn validate_constant(constant: &Constant, pool: &[Constant]) -> Result<(), Const
                 Err(ConstantPoolValidationError::NameAndTypeWithInvalidNameIndex)
             }
         }
-        Constant::InvokeDynamic {name_and_type_index, ..} => {
+        Constant::InvokeDynamic { name_and_type_index, .. } => {
             let nat_constant = &pool[*name_and_type_index as usize];
             if matches!(nat_constant, Constant::NameAndType{..}) {
                 validate_constant(nat_constant, pool)?;
@@ -210,7 +213,7 @@ fn validate_constant(constant: &Constant, pool: &[Constant]) -> Result<(), Const
                 Err(ConstantPoolValidationError::InvokeDynamicWithInvalidNameAndType)
             }
         }
-        Constant::MethodType {descriptor_index} => {
+        Constant::MethodType { descriptor_index } => {
             let descriptor_constant = &pool[*descriptor_index as usize];
             if matches!(descriptor_constant, Constant::UTF8String(_)) {
                 validate_constant(descriptor_constant, pool)?;
@@ -219,7 +222,7 @@ fn validate_constant(constant: &Constant, pool: &[Constant]) -> Result<(), Const
                 Err(ConstantPoolValidationError::MethodTypeWithInvalidDescriptorIndex)
             }
         }
-        Constant::MethodHandle {reference_index, reference_kind} => {
+        Constant::MethodHandle { reference_index, reference_kind } => {
             use MethodReferenceKind::*;
             match reference_kind {
                 GetField | GetStatic | PutField | PutStatic => {
@@ -254,11 +257,11 @@ fn validate_constant(constant: &Constant, pool: &[Constant]) -> Result<(), Const
                     if matches!(diamond_init_method_constant, Constant::Method{..}) {
                         validate_constant(diamond_init_method_constant, pool)?;
                         let name_and_type = match diamond_init_method_constant {
-                            Constant::Method {name_and_type_index, ..} => &pool[*name_and_type_index as usize],
+                            Constant::Method { name_and_type_index, .. } => &pool[*name_and_type_index as usize],
                             _ => unreachable!()
                         };
                         let name = match name_and_type {
-                            Constant::NameAndType {name_index, ..} => &pool[*name_index as usize],
+                            Constant::NameAndType { name_index, .. } => &pool[*name_index as usize],
                             _ => unreachable!()
                         };
                         let name = match name {
@@ -295,41 +298,41 @@ pub fn parse_constant(f: &mut File) -> Result<Constant, ParseClassError> {
             let bytes = class::read_n_dyn(f, len as usize)?;
             let string = String::from_utf8(bytes).map_err(ParseClassError::InvalidUTF8Constant)?;
             Ok(Constant::UTF8String(string))
-        },
+        }
         // Method handle
         15 => {
             let reference_kind: MethodReferenceKind = match FromPrimitive::from_u8(class::read_u8(f)?) {
                 Some(rk) => Ok(rk),
                 None => Err(ParseClassError::InvalidMethodHandleReferenceKind)
             }?;
-            let reference_index = class::read_u16(f)?-1;
+            let reference_index = class::read_u16(f)? - 1;
             Ok(Constant::MethodHandle {
                 reference_kind,
-                reference_index
+                reference_index,
             })
         }
         // Method Type
         16 => {
             Ok(Constant::MethodType {
-                descriptor_index: class::read_u16(f)?-1
+                descriptor_index: class::read_u16(f)? - 1
             })
         }
         // Invoke Dynamic
         18 => {
-            let bootstrap_method_attr_index = class::read_u16(f)?-1;
-            let name_and_type_index = class::read_u16(f)?-1;
+            let bootstrap_method_attr_index = class::read_u16(f)? - 1;
+            let name_and_type_index = class::read_u16(f)? - 1;
             Ok(Constant::InvokeDynamic {
                 bootstrap_method_attr_index,
-                name_and_type_index
+                name_and_type_index,
             })
         }
         // Name And Type
         12 => {
-            let name_index = class::read_u16(f)?-1;
-            let descriptor_index = class::read_u16(f)?-1;
+            let name_index = class::read_u16(f)? - 1;
+            let descriptor_index = class::read_u16(f)? - 1;
             Ok(Constant::NameAndType {
                 descriptor_index,
-                name_index
+                name_index,
             })
         }
         // Integer
@@ -355,32 +358,32 @@ pub fn parse_constant(f: &mut File) -> Result<Constant, ParseClassError> {
         // Class
         7 => {
             Ok(Constant::Class {
-                name_index: class::read_u16(f)?-1
+                name_index: class::read_u16(f)? - 1
             })
         }
         // String
         8 => {
             Ok(Constant::String {
-                string_index: class::read_u16(f)?-1
+                string_index: class::read_u16(f)? - 1
             })
         }
         // Field
         9 => {
-            let class_index = class::read_u16(f)?-1;
-            let name_and_type_index = class::read_u16(f)?-1;
-            Ok(Constant::Field {class_index, name_and_type_index})
+            let class_index = class::read_u16(f)? - 1;
+            let name_and_type_index = class::read_u16(f)? - 1;
+            Ok(Constant::Field { class_index, name_and_type_index })
         }
         // Method
         10 => {
-            let class_index = class::read_u16(f)?-1;
-            let name_and_type_index = class::read_u16(f)?-1;
-            Ok(Constant::Method {class_index, name_and_type_index})
+            let class_index = class::read_u16(f)? - 1;
+            let name_and_type_index = class::read_u16(f)? - 1;
+            Ok(Constant::Method { class_index, name_and_type_index })
         }
         // Interface Method
         11 => {
-            let class_index = class::read_u16(f)?-1;
-            let name_and_type_index = class::read_u16(f)?-1;
-            Ok(Constant::InterfaceMethod {class_index, name_and_type_index})
+            let class_index = class::read_u16(f)? - 1;
+            let name_and_type_index = class::read_u16(f)? - 1;
+            Ok(Constant::InterfaceMethod { class_index, name_and_type_index })
         }
         _ => todo!()
     }

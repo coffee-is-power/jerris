@@ -59,9 +59,11 @@ impl ParseBigEndian<u16> for [u8; 2] {
             (self[1] as u16)
     }
 }
+
 #[cfg(test)]
 mod tests {
     use super::ParseBigEndian;
+
     macro_rules! parse {
     ($arr:expr, $t:ty) => {
         {
@@ -71,27 +73,32 @@ mod tests {
     };
 }
     #[test]
-    pub fn parse_u16(){
+    pub fn parse_u16() {
         assert_eq!(parse!([0xca_u8, 0xfe_u8], u16), 0xcafe_u16);
     }
+
     #[test]
-    pub fn parse_u32(){
+    pub fn parse_u32() {
         assert_eq!(parse!([0xca_u8, 0xfe_u8, 0xba_u8, 0xbe_u8], u32), 0xcafebabe_u32);
     }
+
     #[test]
-    pub fn parse_u64(){
+    pub fn parse_u64() {
         assert_eq!(parse!([0xca_u8, 0xfe_u8, 0xba_u8, 0xbe_u8, 0xca_u8, 0xfe_u8, 0xba_u8, 0xbe_u8], u64), 0xcafebabecafebabe_u64);
     }
+
     #[test]
-    pub fn parse_i16(){
+    pub fn parse_i16() {
         assert_eq!(parse!([0x0a_u8, 0xfe_u8], i16), 0x0afe_i16);
     }
+
     #[test]
-    pub fn parse_i32(){
+    pub fn parse_i32() {
         assert_eq!(parse!([0x0a_u8, 0xfe_u8, 0xba_u8, 0xbe_u8], i32), 0x0afebabe_i32);
     }
+
     #[test]
-    pub fn parse_i64(){
+    pub fn parse_i64() {
         assert_eq!(parse!([0x0a_u8, 0xce_u8, 0xba_u8, 0xbe_u8, 0xca_u8, 0xfe_u8, 0xba_u8, 0xbe_u8], i64), 0x0acebabecafebabe_i64);
     }
 }

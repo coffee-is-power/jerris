@@ -1,9 +1,10 @@
-
 use std::fs::File;
-use std::path::PathBuf;
 use std::io::Read;
+use std::path::PathBuf;
 use std::string::FromUtf8Error;
+
 use thiserror::Error;
+
 use crate::{access_flags::ClassAccessFlags, constant_pool};
 use crate::attribute::{Attribute, parse_attributes};
 use crate::big_endian::ParseBigEndian;
@@ -27,6 +28,7 @@ impl JavaVersion {
         }
     }
 }
+
 #[derive(Debug, PartialEq)]
 pub struct Class {
     /// Java version that this class was compiled for
@@ -47,38 +49,44 @@ pub struct Class {
     pub methods: Vec<Method>,
     pub attributes: Vec<Attribute>,
 }
+
 pub(crate) fn io_err<T>(res: Result<T, std::io::Error>) -> Result<T, ParseClassError> {
     res.map_err(ParseClassError::IoError)
 }
+
 pub(crate) fn read_n_dyn(f: &mut File, n: usize) -> Result<Vec<u8>, ParseClassError> {
     let mut b = vec![0; n];
     io_err(f.read_exact(&mut b))?;
     Ok(b)
 }
+
 pub(crate) fn read_n<const N: usize>(f: &mut File) -> Result<[u8; N], ParseClassError> {
     let mut b = [0u8; N];
     io_err(f.read_exact(&mut b))?;
     Ok(b)
 }
+
 pub(crate) fn read_u8(f: &mut File) -> Result<u8, ParseClassError> {
     let mut b = [0u8; 1];
     io_err(f.read_exact(&mut b))?;
     Ok(b[0])
 }
+
 pub(crate) fn read_u16(f: &mut File) -> Result<u16, ParseClassError> {
     let mut b = [0u8; 2];
     io_err(f.read_exact(&mut b))?;
     Ok(b.parse_big_endian())
 }
+
 pub(crate) fn read_u32(f: &mut File) -> Result<u32, ParseClassError> {
     let mut b = [0u8; 4];
     io_err(f.read_exact(&mut b))?;
     Ok(b.parse_big_endian())
 }
+
 impl Class {
     pub const MAGIC: u32 = 0xcafebabe;
     pub fn from_file<P: Into<PathBuf>>(path: P) -> Result<Self, ParseClassError> {
-
         let path: PathBuf = path.into();
         let mut file = io_err(File::open(path))?;
         if read_u32(&mut file)? != Self::MAGIC {
@@ -154,5 +162,5 @@ pub enum ParseClassError {
     #[error("failed to parse field: {0}")]
     FieldParseError(#[from] FieldParseError),
     #[error("failed to parse method: {0}")]
-    MethodParseError(#[from] MethodParseError)
+    MethodParseError(#[from] MethodParseError),
 }

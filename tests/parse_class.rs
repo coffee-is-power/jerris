@@ -1,4 +1,5 @@
 use std::string::ToString;
+
 use jerris::access_flags::{ClassAccessFlags, FieldAccessFlags, MethodAccessFlags};
 use jerris::attribute::Attribute;
 use jerris::class::{Class, JavaVersion};
@@ -7,8 +8,7 @@ use jerris::field::Field;
 use jerris::method::Method;
 
 #[test]
-fn parse_class(){
-
+fn parse_class() {
     let class = Class {
         java_version: JavaVersion {
             minor: 0,

@@ -5,6 +5,7 @@
 //! This crate implements the specifications at https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html
 #[macro_use]
 extern crate num_derive;
+
 pub mod big_endian;
 pub mod class;
 pub mod constant_pool;
